@@ -1,6 +1,6 @@
 const express = require("express");
 const path = require("path");
-const { addTask } = require("./utils/createTaskUtil");
+const { editTask } = require("./utils/updateUtils");
 
 //finalise createTasUtil
 
@@ -9,9 +9,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, "public")));
+app.put("/tasks/:id", editTask);
 
-app.post("/tasks", addTask);
+app.use(express.static(path.join(__dirname, "public")));
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
