@@ -2,13 +2,14 @@
   "tasks": [
     {
       "id": "t1",
-      "title": "Finish DevOps Report",
+      "title": "DevOPS Project New",
       "description": "Complete Part 1a writeup.",
       "priority": "medium",
       "status": "pending",
       "dueDate": "2025-11-30",
-      "tags": ["school"]
+      "tags": [
+        "school"
+      ]
     }
   ]
 }
-
