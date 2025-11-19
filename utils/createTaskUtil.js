@@ -1,4 +1,4 @@
-const { Task } = require("../models/Task");
+const Task = require("../models/Task");
 const fs = require("fs").promises;
 const path = require("path");
 const TASKS_FILE = path.join("utils", "taskboard.json");
@@ -7,7 +7,7 @@ const TEMPLATE_FILE = path.join("utils", "taskboard.template.json");
 async function addTask(req, res) {
   try {
     const { title, description, priority, dueDate, tags } = req.body;
-    const newTask = new Task(title, description, priority, dueDate, tags);
+    const newTask = new Task({ title, description, priority, dueDate, tags });
     let tasksData = {};
     try {
       const data = await fs.readFile(TASKS_FILE, "utf8");
