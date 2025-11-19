@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const { editTask } = require("./utils/updateUtils");
+const { addTask } = require("./utils/createTaskUtil");
 
 //finalise createTasUtil
 
@@ -10,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.put("/tasks/:id", editTask);
+app.post("/tasks", addTask);
 
 app.use(express.static(path.join(__dirname, "public")));
 
