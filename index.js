@@ -4,9 +4,10 @@ const path = require("path");
 const { editTask } = require("./utils/UpdateUtils");
 
 const { addTask } = require("./utils/createTaskUtil");
-const { deletedTask } = require("./utils/DeleteTaskUtil");
 
 const { getAllTasks, getTaskById } = require("./utils/getTasksUtil");
+
+const { deletedTask } = require("./utils/DeleteTaskUtil");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
