@@ -101,7 +101,7 @@ function initCreateTaskModule() {
         event.stopPropagation();   
         TaskState.tags.splice(index, 1);  // x to click and remove tag
         renderTags();   
-      });s
+      });
 
       pill.appendChild(textSpan);
       pill.appendChild(removeSpan);
