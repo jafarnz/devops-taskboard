@@ -1,4 +1,4 @@
-(function () {
+function initReadModule() {
   var API_URL = "/tasks";
   var tasksList = document.getElementById("tasksList");
   var emptyState = document.getElementById("emptyState");
@@ -94,7 +94,7 @@
         var color = TaskHelpers.getTagColor(tag);
         return (
           '<span class="task-tag" style="background-color:' +
-          color.bg +
+          color.bg + // build the card to show in home page with GET request
           ';color:' +
           color.text +
           ';border-color:' +
@@ -143,7 +143,7 @@
     }).length;
 
     if (stats.total) {
-      stats.total.textContent = tasks.length;
+      stats.total.textContent = tasks.length;  // update total tasks count
     }
     if (stats.completed) {
       stats.completed.textContent = completed;
@@ -157,7 +157,7 @@
     if (!id) {
       return;
     }
-    var request = new XMLHttpRequest();
+    var request = new XMLHttpRequest();  // create a new XMLHttpRequest object
     request.open("GET", API_URL + "/" + id, true);
     request.setRequestHeader("Content-Type", "application/json");
     request.onload = function () {
@@ -216,7 +216,7 @@
     placeholders.forEach(function (el) {
       if (el) {
         el.textContent = "-";
-      }
+      } // clears all the data from the modal. eg. when u clos the view modal, delete ll the data, so no visible data fafter switch out.
     });
     if (detailEls.tags) {
       detailEls.tags.innerHTML = "";
@@ -233,7 +233,7 @@
       .map(function (part) {
         return part.charAt(0).toUpperCase() + part.slice(1);
       })
-      .join(" ");
+      .join(" ");  // set the status format (like pending to Pending)
   }
 
   function parseResponse(text) {
@@ -243,4 +243,6 @@
       return {};
     }
   }
-})();
+}
+
+initReadModule();

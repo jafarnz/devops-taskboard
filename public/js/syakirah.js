@@ -1,4 +1,4 @@
-(function () {
+function initDeleteModule() {
   var API_URL = "/tasks";
   var deleteBtn = document.getElementById("deleteTaskBtn");
   var viewModal = document.getElementById("viewTaskModal");
@@ -9,7 +9,7 @@
         if (!TaskState.selectedTask) {
           return;
         }
-        deleteTask(TaskState.selectedTask.id);
+        deleteTask(TaskState.selectedTask.id); 
       });
     }
   });
@@ -50,4 +50,6 @@
       return {};
     }
   }
-})();
+}
+
+initDeleteModule();
