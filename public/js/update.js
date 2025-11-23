@@ -1,4 +1,4 @@
-(function () {
+function initUpdateModule() {
   var API_URL = "/tasks";
   var editBtn = document.getElementById("editTaskActionBtn");
   var editForm = document.getElementById("editTaskForm");
@@ -32,7 +32,7 @@
       return;
     }
     editForm.title.value = task.title || "";
-    editForm.description.value = task.description || "";
+    editForm.description.value = task.description || ""; // take the description from the task and put it in the edit form
     editForm.priority.value = (task.priority || "medium").toLowerCase();
     editForm.status.value = (task.status || "pending").toLowerCase();
     editForm.dueDate.value = TaskHelpers.formatDateForInput(task.dueDate);
@@ -46,12 +46,12 @@
   };
 
   function handleEditClick(event) {
-    event.preventDefault();
+    event.preventDefault();  // prevent default form submission behavior
     if (!TaskState.selectedTask || !editForm) {
       return;
     }
     if (!isEditing) {
-      setEditMode(true);
+      setEditMode(true);  // enable edit mode
       editForm.title.focus();
     } else {
       editForm.requestSubmit();
@@ -61,10 +61,10 @@
   function setEditMode(value) {
     isEditing = Boolean(value);
     if (editForm) {
-      editForm.style.display = isEditing ? "block" : "none";
+      editForm.style.display = isEditing ? "block" : "none"; // show/hide edit form 
     }
     if (detailSection) {
-      detailSection.style.display = isEditing ? "none" : "";
+      detailSection.style.display = isEditing ? "none" : ""; 
     }
     if (editBtn) {
       editBtn.textContent = isEditing ? "Save Changes" : "Edit Task";
@@ -73,13 +73,13 @@
 
   function handleSubmit(event) {
     event.preventDefault();
-    if (!TaskState.selectedTask) {
+    if (!TaskState.selectedTask) { 
       return;
     }
     var payload = {
       title: (editForm.title.value || "").trim(),
       description: (editForm.description.value || "").trim(),
-      priority: (editForm.priority.value || "medium").toLowerCase(),
+      priority: (editForm.priority.value || "medium").toLowerCase(), // make the json phaylod for when u want to send the request for PUT
       status: (editForm.status.value || "pending").toLowerCase(),
       dueDate: editForm.dueDate.value,
       tags: TaskState.editTags.slice(),
@@ -88,13 +88,13 @@
     var validation = validatePayload(payload);
     if (!validation.valid) {
       alert(validation.message);
-      if (validation.field && typeof validation.field.focus === "function") {
+      if (validation.field && typeof validation.field.focus === "function") { // ceck validaitona agin
         validation.field.focus();
       }
       return;
     }
 
-    var request = new XMLHttpRequest();
+    var request = new XMLHttpRequest(); // xml httpr equest
     request.open("PUT", API_URL + "/" + TaskState.selectedTask.id, true);
     request.setRequestHeader("Content-Type", "application/json");
     request.onload = function () {
@@ -118,7 +118,7 @@
     request.send(JSON.stringify(payload));
   }
 
-  function validatePayload(payload) {
+  function validatePayload(payload) { //validaitonc hecs
     if (!payload.title) {
       return { valid: false, message: "Title is required", field: editForm.title };
     }
@@ -167,12 +167,12 @@
       var value = tagInput.value.trim();
       if (value && TaskState.editTags.indexOf(value) === -1) {
         TaskState.editTags.push(value);
-        renderEditTags();
+        renderEditTags();  // handle tags  same as the create jn
       }
       tagInput.value = "";
     } else if (event.key === "Backspace" && !tagInput.value) {
       TaskState.editTags.pop();
-      renderEditTags();
+      renderEditTags();  // handle tags  same as the create jn
     }
   }
 
@@ -190,7 +190,7 @@
       pill.style.backgroundColor = color.bg;
       pill.style.color = color.text;
       pill.style.borderColor = color.border;
-      var textSpan = document.createElement("span");
+      var textSpan = document.createElement("span"); // handle the div for tag enter (smame as create la)
       textSpan.textContent = tag;
       var removeSpan = document.createElement("span");
       removeSpan.className = "tag-remove";
@@ -213,4 +213,6 @@
       return {};
     }
   }
-})();
+}
+
+initUpdateModule();

@@ -1,4 +1,4 @@
-(function () {
+function initCreateTaskModule() {
   var API_URL = "/tasks";
   var modal = document.getElementById("createTaskModal");
   var openBtn = document.getElementById("createTaskBtn");
@@ -62,7 +62,7 @@
   }
 
   function handleTagKeydown(event) {
-    if (event.key === "Enter") {
+    if (event.key === "Enter") { // on enter tag after u press enter add ur tag
       event.preventDefault();
       var value = tagInput.value.trim();
       if (value && TaskState.tags.indexOf(value) === -1) {
@@ -71,7 +71,7 @@
       }
       tagInput.value = "";
     } else if (event.key === "Backspace" && !tagInput.value) {
-      TaskState.tags.pop();
+      TaskState.tags.pop(); 
       renderTags();
     }
   }
@@ -87,7 +87,7 @@
     TaskState.tags.forEach(function (tag, index) {
       var pill = document.createElement("div");
       pill.className = "tag-pill";
-      var color = TaskHelpers.getTagColor(tag);
+      var color = TaskHelpers.getTagColor(tag);   // render the div to show the tag you chose 
       pill.style.backgroundColor = color.bg;
       pill.style.color = color.text;
       pill.style.borderColor = color.border;
@@ -98,10 +98,10 @@
       removeSpan.className = "tag-remove";
       removeSpan.textContent = "\u00d7";
       removeSpan.addEventListener("click", function (event) {
-        event.stopPropagation();
-        TaskState.tags.splice(index, 1);
-        renderTags();
-      });
+        event.stopPropagation();   
+        TaskState.tags.splice(index, 1);  // x to click and remove tag
+        renderTags();   
+      });s
 
       pill.appendChild(textSpan);
       pill.appendChild(removeSpan);
@@ -116,18 +116,18 @@
     }
 
     var payload = {
-      title: (form.title.value || "").trim(),
+      title: (form.title.value || "").trim(),         // set joson payoad
       description: (form.description.value || "").trim(),
       priority: (form.priority.value || "medium").toLowerCase(),
       status: "pending",
       dueDate: form.dueDate.value,
-      tags: TaskState.tags.slice(),
+      tags: TaskState.tags.slice(),   
     };
 
     var validation = validatePayload(payload);
-    if (!validation.valid) {
+    if (!validation.valid) { 
       alert(validation.message);
-      if (validation.field && typeof validation.field.focus === "function") {
+      if (validation.field && typeof validation.field.focus === "function") {  //run thru validation
         validation.field.focus();
       }
       return;
@@ -154,7 +154,7 @@
     request.send(JSON.stringify(payload));
   }
 
-  function validatePayload(payload) {
+  function validatePayload(payload) { //validation checks for all inputs
     if (!payload.title) {
       return { valid: false, message: "Title is required", field: form.title };
     }
@@ -209,4 +209,6 @@
       return {};
     }
   }
-})();
+};
+
+initCreateTaskModule();
