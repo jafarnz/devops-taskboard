@@ -70,6 +70,17 @@ pipeline {
             }
         }
 
+        stage('Run Docker App') {
+            steps {
+                echo '🚀 Starting app with Docker...'
+                sh '''
+                    docker rm -f devops-taskboard-local || true
+                    docker run -d --name devops-taskboard-local -p 3002:3000 devops-taskboard:latest
+                    echo "Docker app running at: http://localhost:3002"
+                '''
+            }
+        }
+
         stage('Build Podman Image') {
             when {
                 expression {
@@ -89,6 +100,22 @@ pipeline {
                         echo 'Run: podman machine start'
                     }
                 }
+            }
+        }
+
+        stage('Run Podman App') {
+            when {
+                expression {
+                    return sh(script: 'podman machine info 2>/dev/null', returnStatus: true) == 0
+                }
+            }
+            steps {
+                echo '🚀 Starting app with Podman...'
+                sh '''
+                    podman rm -f devops-taskboard-podman || true
+                    podman run -d --name devops-taskboard-podman -p 3003:3000 devops-taskboard:latest
+                    echo "Podman app running at: http://localhost:3003"
+                '''
             }
         }
 
@@ -123,11 +150,20 @@ pipeline {
                 '''
                 sh '''
                     kubectl apply -f k8s/namespace.yaml || true
+                    kubectl delete service devops-taskboard-service --ignore-not-found
                     kubectl apply -f k8s/deployment.yaml
                     kubectl apply -f k8s/dashboard.yaml || true
                     kubectl rollout status deployment/devops-taskboard --timeout=120s
                     kubectl get pods -l app=devops-taskboard
                     kubectl get services
+                '''
+                sh '''
+                    SERVICE_URL=$(minikube service devops-taskboard-service --url 2>/dev/null || echo "")
+                    if [ -n "$SERVICE_URL" ]; then
+                        echo "Minikube app running at: $SERVICE_URL"
+                    else
+                        echo "Minikube service URL not available"
+                    fi
                 '''
             }
         }
