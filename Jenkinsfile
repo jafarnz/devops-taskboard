@@ -158,8 +158,8 @@ pipeline {
                     kubectl get services
                 '''
                 sh '''
-                    echo "Access (recommended): kubectl port-forward svc/devops-taskboard-service 8080:80"
-                    echo "Then open: http://localhost:8080"
+                    echo "Access (recommended): kubectl port-forward svc/devops-taskboard-service 5030:80"
+                    echo "Then open: http://localhost:5030"
                 '''
             }
         }
@@ -174,10 +174,10 @@ pipeline {
                 echo '💨 Running smoke tests...'
                 sh '''
                     sleep 10
-                    kubectl port-forward svc/devops-taskboard-service 8080:80 >/tmp/pf.log 2>&1 &
+                    kubectl port-forward svc/devops-taskboard-service 5030:80 >/tmp/pf.log 2>&1 &
                     PF_PID=$!
                     sleep 2
-                    curl -f "http://localhost:8080/tasks" || echo "Smoke test completed"
+                    curl -f "http://localhost:5030/tasks" || echo "Smoke test completed"
                     kill $PF_PID || true
                 '''
             }
