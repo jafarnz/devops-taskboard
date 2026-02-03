@@ -158,13 +158,8 @@ pipeline {
                     kubectl get services
                 '''
                 sh '''
-                    MINIKUBE_IP=$(minikube ip 2>/dev/null || echo "")
-                    NODE_PORT=$(kubectl get svc devops-taskboard-service -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
-                    if [ -n "$MINIKUBE_IP" ] && [ -n "$NODE_PORT" ]; then
-                        echo "Minikube app running at: http://$MINIKUBE_IP:$NODE_PORT"
-                    else
-                        echo "Minikube service URL not available"
-                    fi
+                    echo "Access (recommended): kubectl port-forward svc/devops-taskboard-service 8080:80"
+                    echo "Then open: http://localhost:8080"
                 '''
             }
         }
@@ -179,13 +174,11 @@ pipeline {
                 echo '💨 Running smoke tests...'
                 sh '''
                     sleep 10
-                    MINIKUBE_IP=$(minikube ip 2>/dev/null || echo "")
-                    NODE_PORT=$(kubectl get svc devops-taskboard-service -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
-                    if [ -n "$MINIKUBE_IP" ] && [ -n "$NODE_PORT" ]; then
-                        curl -f "http://$MINIKUBE_IP:$NODE_PORT/tasks" || echo "Smoke test completed"
-                    else
-                        echo "Service URL not available"
-                    fi
+                    kubectl port-forward svc/devops-taskboard-service 8080:80 >/tmp/pf.log 2>&1 &
+                    PF_PID=$!
+                    sleep 2
+                    curl -f "http://localhost:8080/tasks" || echo "Smoke test completed"
+                    kill $PF_PID || true
                 '''
             }
         }
