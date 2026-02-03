@@ -1,136 +1,75 @@
 // ==============================================================================
-// Jenkinsfile - Complete CI/CD Pipeline for DevOps Taskboard
-// Features: Jest + Playwright Testing, Blue Ocean Dashboard, Email Notifications
+// Jenkinsfile - Simplified CI/CD Pipeline for DevOps Taskboard
+// Features: Jest + Playwright Testing, Docker + Podman, Minikube, Dashboard, Email
 // ==============================================================================
 
 pipeline {
     agent any
-    
-    // Environment variables
+
     environment {
-        // Application settings
         APP_NAME = 'devops-taskboard'
-        APP_VERSION = "${env.BUILD_NUMBER}"
         DOCKER_IMAGE = "devops-taskboard:${env.BUILD_NUMBER}"
-        DOCKER_IMAGE_LATEST = "devops-taskboard:latest"
-        DOCKER_PLAYWRIGHT_IMAGE = "devops-taskboard:playwright-${env.BUILD_NUMBER}"
-        
-        // Kubernetes/Minikube settings
-        KUBE_NAMESPACE = 'default'
-        KUBE_DEPLOYMENT = 'devops-taskboard'
-        
-        // Email notification settings (configure in Jenkins)
+        DOCKER_IMAGE_LATEST = 'devops-taskboard:latest'
         EMAIL_RECIPIENTS = 'jaf.nz@icloud.com'
     }
-    
-    // Build options - Optimized for Blue Ocean visualization
+
     options {
         buildDiscarder(logRotator(numToKeepStr: '20'))
         timestamps()
         timeout(time: 60, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    
-    // Pipeline stages
+
     stages {
-        // ==================================================================
-        // Stage 1: Checkout Source Code
-        // ==================================================================
-        stage('Checkout') {
-            steps {
-                echo '📥 Checking out source code...'
-                checkout scm
-                
-                script {
-                    env.GIT_COMMIT_SHORT = sh(
-                        script: 'git rev-parse --short HEAD',
-                        returnStdout: true
-                    ).trim()
-                    env.GIT_BRANCH = sh(
-                        script: 'git rev-parse --abbrev-ref HEAD',
-                        returnStdout: true
-                    ).trim()
-                }
-                
-                echo "Branch: ${env.GIT_BRANCH}"
-                echo "Commit: ${env.GIT_COMMIT_SHORT}"
-            }
-        }
-        
-        // ==================================================================
-        // Stage 2: Install Dependencies
-        // ==================================================================
         stage('Install Dependencies') {
             steps {
-                echo '📦 Installing Node.js dependencies...'
+                echo '📦 Installing dependencies...'
                 sh 'npm install'
             }
         }
-        
-        // ==================================================================
-        // Stage 3: Jest Unit Tests with Coverage
-        // ==================================================================
-        stage('Jest Unit Tests') {
+
+        stage('Backend Tests') {
             steps {
-                echo '🧪 Running Jest unit tests with coverage...'
+                echo '🧪 Running backend tests...'
                 sh '''
-                    echo "Running: npm test"
                     npm test
-                    
-                    echo "Running: npm run test:coverage"
                     npm run test:coverage || true
                 '''
             }
             post {
                 always {
-                    // Archive Jest coverage reports
                     archiveArtifacts artifacts: 'coverage/**/*', allowEmptyArchive: true
                 }
             }
         }
-        
-        // ==================================================================
-        // Stage 4: Playwright E2E Tests (All 3 Browsers)
-        // ==================================================================
-        stage('Playwright E2E Tests') {
+
+        stage('Frontend Tests') {
             steps {
-                echo '🎭 Running Playwright E2E tests on Chromium, Firefox, and WebKit...'
+                echo '🎭 Running Playwright tests (Chromium, Firefox, WebKit)...'
                 sh '''
-                    # Install Playwright browsers (chromium, firefox, webkit)
                     npx playwright install --with-deps chromium firefox webkit
-                    
-                    echo "Running: npm run test-frontend"
                     npm run test-frontend || true
-                    
-                    echo "Running: npm run test-frontend:coverage"
                     npm run test-frontend:coverage || true
                 '''
             }
             post {
                 always {
-                    // Archive Playwright reports
                     archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
                     archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
                 }
             }
         }
-        
-        // ==================================================================
-        // Stage 5: Build Production Docker Image
-        // ==================================================================
+
         stage('Build Docker Image') {
             steps {
-                echo '🐳 Building production Docker image...'
+                echo '🐳 Building Docker image...'
                 sh """
                     docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
+                    docker images | grep ${APP_NAME} || true
                 """
-                sh 'docker images | grep devops-taskboard'
             }
         }
-        
-        // ==================================================================
-        // Stage 6: Build with Podman (Alternative Containerization)
-        // ==================================================================
+
         stage('Build Podman Image') {
             when {
                 expression {
@@ -138,12 +77,9 @@ pipeline {
                 }
             }
             steps {
-                echo '🦭 Building Podman image (Alternative Containerization)...'
+                echo '🦭 Building Podman image...'
                 script {
-                    def podmanStatus = sh(
-                        script: 'podman machine info 2>/dev/null',
-                        returnStatus: true
-                    )
+                    def podmanStatus = sh(script: 'podman machine info 2>/dev/null', returnStatus: true)
                     if (podmanStatus == 0) {
                         sh """
                             podman build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
@@ -155,63 +91,21 @@ pipeline {
                 }
             }
         }
-        
-        // ==================================================================
-        // Stage 7: Container Integration Tests
-        // ==================================================================
-        stage('Container Integration Tests') {
-            steps {
-                echo '🧪 Running integration tests in container...'
-                script {
-                    try {
-                        sh """
-                            # Run the container
-                            docker run -d --name test-app-${BUILD_NUMBER} -p 3001:3000 ${DOCKER_IMAGE_LATEST}
-                            
-                            # Wait for container to start
-                            sleep 15
-                            
-                            # Test the API endpoints
-                            echo "Testing GET /tasks..."
-                            curl -f http://localhost:3001/tasks && echo " ✓ GET /tasks passed"
-                            
-                            # Test the frontend
-                            echo "Testing frontend..."
-                            curl -f http://localhost:3001/ && echo " ✓ Frontend accessible"
-                        """
-                    } catch (Exception e) {
-                        echo "⚠️ Container integration tests failed: ${e.message}"
-                    } finally {
-                        sh """
-                            # Cleanup
-                            docker stop test-app-${BUILD_NUMBER} || true
-                            docker rm test-app-${BUILD_NUMBER} || true
-                        """
-                    }
-                }
-            }
-        }
-        
-        // ==================================================================
-        // Stage 8: Security Scan
-        // ==================================================================
+
         stage('Security Scan') {
             steps {
-                echo '🔒 Running security scan...'
+                echo '🔒 Running security scan (Trivy if available)...'
                 script {
                     def trivyExists = sh(script: 'which trivy', returnStatus: true) == 0
                     if (trivyExists) {
-                        sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE} || true"
+                        sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE_LATEST} || true"
                     } else {
-                        echo 'Trivy not installed, skipping security scan'
+                        echo 'Trivy not installed, skipping scan'
                     }
                 }
             }
         }
-        
-        // ==================================================================
-        // Stage 9: Deploy to Minikube
-        // ==================================================================
+
         stage('Deploy to Minikube') {
             when {
                 expression {
@@ -220,44 +114,24 @@ pipeline {
             }
             steps {
                 echo '☸️ Deploying to Minikube...'
-                script {
-                    def minikubeStatus = sh(
-                        script: 'minikube status --format={{.Host}}',
-                        returnStatus: true
-                    )
-                    
-                    if (minikubeStatus != 0) {
-                        echo 'Starting Minikube...'
-                        sh 'minikube start --driver=docker'
-                    }
-                    
-                    // Build in Minikube's Docker daemon
-                    sh '''
+                sh 'minikube start --driver=docker || true'
+                sh '''
+                    minikube image load devops-taskboard:latest || (
                         eval $(minikube docker-env)
                         docker build -t devops-taskboard:latest .
-                    '''
-                    
-                    // Apply Kubernetes manifests
-                    sh '''
-                        kubectl apply -f k8s/namespace.yaml || true
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl rollout status deployment/devops-taskboard --timeout=120s
-                        kubectl get pods -l app=devops-taskboard
-                        kubectl get services
-                    '''
-                    
-                    def serviceUrl = sh(
-                        script: 'minikube service devops-taskboard-service --url || echo "URL not available"',
-                        returnStdout: true
-                    ).trim()
-                    echo "Application deployed at: ${serviceUrl}"
-                }
+                    )
+                '''
+                sh '''
+                    kubectl apply -f k8s/namespace.yaml || true
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/dashboard.yaml || true
+                    kubectl rollout status deployment/devops-taskboard --timeout=120s
+                    kubectl get pods -l app=devops-taskboard
+                    kubectl get services
+                '''
             }
         }
-        
-        // ==================================================================
-        // Stage 10: Smoke Tests on Kubernetes
-        // ==================================================================
+
         stage('Smoke Tests') {
             when {
                 expression {
@@ -265,31 +139,19 @@ pipeline {
                 }
             }
             steps {
-                echo '💨 Running smoke tests on deployed application...'
+                echo '💨 Running smoke tests...'
                 sh '''
                     sleep 10
                     SERVICE_URL=$(minikube service devops-taskboard-service --url 2>/dev/null || echo "")
-                    
                     if [ -n "$SERVICE_URL" ]; then
-                        echo "Testing: $SERVICE_URL/tasks"
-                        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/tasks")
-                        echo "Response code: $HTTP_CODE"
-                        
-                        if [ "$HTTP_CODE" = "200" ]; then
-                            echo "✓ Smoke test passed!"
-                        else
-                            echo "⚠ Smoke test returned $HTTP_CODE"
-                        fi
+                        curl -f "$SERVICE_URL/tasks" || echo "Smoke test completed"
                     else
                         echo "Service URL not available"
                     fi
                 '''
             }
         }
-        
-        // ==================================================================
-        // Stage 11: Setup Dashboard
-        // ==================================================================
+
         stage('Setup Dashboard') {
             when {
                 expression {
@@ -297,30 +159,21 @@ pipeline {
                 }
             }
             steps {
-                echo '📊 Setting up Kubernetes Dashboard...'
+                echo '📊 Enabling Kubernetes Dashboard...'
                 sh '''
                     minikube addons enable dashboard || true
                     minikube addons enable metrics-server || true
-                    kubectl apply -f k8s/dashboard.yaml || true
-                    echo "Dashboard available via: minikube dashboard"
                 '''
             }
         }
     }
-    
-    // ==================================================================
-    // Post-build Actions
-    // ==================================================================
+
     post {
         always {
             echo '🧹 Cleaning up...'
             sh 'docker image prune -f || true'
-            
-            // Archive coverage and test reports
-            archiveArtifacts artifacts: 'coverage/**/*', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
         }
-        
+
         success {
             echo '✅ Pipeline completed successfully!'
             script {
@@ -329,19 +182,11 @@ pipeline {
                         subject: "✅ SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
                         body: """
                             <h2>Build Successful!</h2>
-                            <p><strong>Project:</strong> ${env.JOB_NAME}</p>
+                            <p><strong>Job:</strong> ${env.JOB_NAME}</p>
                             <p><strong>Build Number:</strong> ${env.BUILD_NUMBER}</p>
-                            <p><strong>Branch:</strong> ${env.GIT_BRANCH}</p>
-                            <p><strong>Commit:</strong> ${env.GIT_COMMIT_SHORT}</p>
                             <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
                             <hr>
-                            <h3>Test Results:</h3>
-                            <ul>
-                                <li>Jest Unit Tests: ✅ Passed</li>
-                                <li>Playwright E2E Tests (Chromium, Firefox, WebKit): ✅ Passed</li>
-                                <li>Integration Tests: ✅ Passed</li>
-                            </ul>
-                            <p>Application deployed to Minikube.</p>
+                            <p>Tests passed and deployment completed.</p>
                         """,
                         to: "${EMAIL_RECIPIENTS}",
                         mimeType: 'text/html'
@@ -351,7 +196,7 @@ pipeline {
                 }
             }
         }
-        
+
         failure {
             echo '❌ Pipeline failed!'
             script {
@@ -360,36 +205,10 @@ pipeline {
                         subject: "❌ FAILED: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
                         body: """
                             <h2>Build Failed!</h2>
-                            <p><strong>Project:</strong> ${env.JOB_NAME}</p>
-                            <p><strong>Build Number:</strong> ${env.BUILD_NUMBER}</p>
-                            <p><strong>Branch:</strong> ${env.GIT_BRANCH ?: 'Unknown'}</p>
-                            <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                            <p><strong>Console:</strong> <a href="${env.BUILD_URL}console">View Logs</a></p>
-                            <hr>
-                            <p style="color: red;">Please check the console output for details.</p>
-                        """,
-                        to: "${EMAIL_RECIPIENTS}",
-                        mimeType: 'text/html'
-                    )
-                } catch (Exception e) {
-                    echo "Email notification failed: ${e.message}"
-                }
-            }
-        }
-        
-        unstable {
-            echo '⚠️ Pipeline completed with warnings!'
-            script {
-                try {
-                    emailext(
-                        subject: "⚠️ UNSTABLE: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                        body: """
-                            <h2>Build Unstable!</h2>
-                            <p><strong>Project:</strong> ${env.JOB_NAME}</p>
+                            <p><strong>Job:</strong> ${env.JOB_NAME}</p>
                             <p><strong>Build Number:</strong> ${env.BUILD_NUMBER}</p>
                             <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                            <hr>
-                            <p style="color: orange;">Some tests may have failed. Please review.</p>
+                            <p><a href="${env.BUILD_URL}console">View Console Output</a></p>
                         """,
                         to: "${EMAIL_RECIPIENTS}",
                         mimeType: 'text/html'

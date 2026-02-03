@@ -241,7 +241,21 @@ jobs:
         run: |
           eval $(minikube docker-env)
           docker load --input /tmp/docker-image.tar
-          docker tag ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} devops-taskboard:latest
+          IMAGE_REF="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}"
+          FULL_SHA="${GITHUB_SHA}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          if docker image inspect "${IMAGE_REF}:${FULL_SHA}" >/dev/null 2>&1; then
+            docker tag "${IMAGE_REF}:${FULL_SHA}" devops-taskboard:latest
+          elif docker image inspect "${IMAGE_REF}:${SHORT_SHA}" >/dev/null 2>&1; then
+            docker tag "${IMAGE_REF}:${SHORT_SHA}" devops-taskboard:latest
+          elif docker image inspect "${IMAGE_REF}:main" >/dev/null 2>&1; then
+            docker tag "${IMAGE_REF}:main" devops-taskboard:latest
+          elif docker image inspect "${IMAGE_REF}:latest" >/dev/null 2>&1; then
+            docker tag "${IMAGE_REF}:latest" devops-taskboard:latest
+          else
+            echo "No expected tag found after load:" && docker images | head -n 20
+            exit 1
+          fi
           
       - name: 🚀 Deploy to Minikube
         run: |
