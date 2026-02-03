@@ -158,9 +158,10 @@ pipeline {
                     kubectl get services
                 '''
                 sh '''
-                    SERVICE_URL=$(minikube service devops-taskboard-service --url 2>/dev/null || echo "")
-                    if [ -n "$SERVICE_URL" ]; then
-                        echo "Minikube app running at: $SERVICE_URL"
+                    MINIKUBE_IP=$(minikube ip 2>/dev/null || echo "")
+                    NODE_PORT=$(kubectl get svc devops-taskboard-service -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
+                    if [ -n "$MINIKUBE_IP" ] && [ -n "$NODE_PORT" ]; then
+                        echo "Minikube app running at: http://$MINIKUBE_IP:$NODE_PORT"
                     else
                         echo "Minikube service URL not available"
                     fi
@@ -178,9 +179,10 @@ pipeline {
                 echo '💨 Running smoke tests...'
                 sh '''
                     sleep 10
-                    SERVICE_URL=$(minikube service devops-taskboard-service --url 2>/dev/null || echo "")
-                    if [ -n "$SERVICE_URL" ]; then
-                        curl -f "$SERVICE_URL/tasks" || echo "Smoke test completed"
+                    MINIKUBE_IP=$(minikube ip 2>/dev/null || echo "")
+                    NODE_PORT=$(kubectl get svc devops-taskboard-service -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
+                    if [ -n "$MINIKUBE_IP" ] && [ -n "$NODE_PORT" ]; then
+                        curl -f "http://$MINIKUBE_IP:$NODE_PORT/tasks" || echo "Smoke test completed"
                     else
                         echo "Service URL not available"
                     fi
