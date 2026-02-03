@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: devops-taskboard
-          image: devops-taskboard:latest
+          image: devops-taskboard:{{BUILD_NUMBER}}
           imagePullPolicy: Never  # Use local images in Minikube
           ports:
             - containerPort: 3000

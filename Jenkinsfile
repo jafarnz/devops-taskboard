@@ -143,15 +143,15 @@ pipeline {
                 echo '☸️ Deploying to Minikube...'
                 sh 'minikube start --driver=docker || true'
                 sh '''
-                    minikube image load devops-taskboard:latest || (
+                    minikube image load devops-taskboard:${BUILD_NUMBER} || (
                         eval $(minikube docker-env)
-                        docker build -t devops-taskboard:latest .
+                        docker build -t devops-taskboard:${BUILD_NUMBER} -t devops-taskboard:latest .
                     )
                 '''
                 sh '''
                     kubectl apply -f k8s/namespace.yaml || true
                     kubectl delete service devops-taskboard-service --ignore-not-found
-                    kubectl apply -f k8s/deployment.yaml
+                    sed "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" k8s/deployment.yaml | kubectl apply -f -
                     kubectl apply -f k8s/dashboard.yaml || true
                     kubectl rollout status deployment/devops-taskboard --timeout=120s
                     kubectl get pods -l app=devops-taskboard
