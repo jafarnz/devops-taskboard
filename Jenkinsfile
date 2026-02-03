@@ -176,8 +176,19 @@ pipeline {
                     sleep 10
                     kubectl port-forward svc/devops-taskboard-service 5030:80 >/tmp/pf.log 2>&1 &
                     PF_PID=$!
-                    sleep 2
-                    curl -f "http://localhost:5030/tasks" || echo "Smoke test completed"
+                    for i in $(seq 1 15); do
+                        if grep -q "Forwarding" /tmp/pf.log; then
+                            break
+                        fi
+                        sleep 1
+                    done
+                    for i in $(seq 1 10); do
+                        if curl -fs "http://localhost:5030/tasks"; then
+                            echo "Smoke test passed"
+                            break
+                        fi
+                        sleep 2
+                    done
                     kill $PF_PID || true
                 '''
             }
