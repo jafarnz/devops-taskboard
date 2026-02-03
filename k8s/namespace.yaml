@@ -1,0 +1,54 @@
+# ==============================================================================
+# Namespace Configuration for DevOps Taskboard
+# Separate namespace for better resource isolation
+# ==============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-taskboard
+  labels:
+    name: devops-taskboard
+    environment: development
+    project: taskboard
+
+---
+# ==============================================================================
+# Resource Quota for the namespace
+# ==============================================================================
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: devops-taskboard-quota
+  namespace: devops-taskboard
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+    pods: "10"
+    services: "5"
+    configmaps: "10"
+    secrets: "10"
+
+---
+# ==============================================================================
+# Limit Range for default resource limits
+# ==============================================================================
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: devops-taskboard-limits
+  namespace: devops-taskboard
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "256Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      type: Container

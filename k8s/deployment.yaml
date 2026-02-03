@@ -1,0 +1,164 @@
+# ==============================================================================
+# Kubernetes Deployment Configuration for DevOps Taskboard
+# This file defines the deployment, service, and ingress for Minikube
+# ==============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-taskboard
+  namespace: default
+  labels:
+    app: devops-taskboard
+    version: v1
+    environment: development
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devops-taskboard
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: devops-taskboard
+        version: v1
+    spec:
+      containers:
+        - name: devops-taskboard
+          image: devops-taskboard:latest
+          imagePullPolicy: Never  # Use local images in Minikube
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /tasks
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /tasks
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      restartPolicy: Always
+
+---
+# ==============================================================================
+# Service Configuration - Exposes the deployment internally
+# ==============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-taskboard-service
+  namespace: default
+  labels:
+    app: devops-taskboard
+spec:
+  type: NodePort
+  selector:
+    app: devops-taskboard
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 30080
+
+---
+# ==============================================================================
+# Ingress Configuration - External access through Minikube
+# ==============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devops-taskboard-ingress
+  namespace: default
+  labels:
+    app: devops-taskboard
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: taskboard.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: devops-taskboard-service
+                port:
+                  number: 80
+
+---
+# ==============================================================================
+# ConfigMap for application configuration
+# ==============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devops-taskboard-config
+  namespace: default
+  labels:
+    app: devops-taskboard
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+---
+# ==============================================================================
+# Horizontal Pod Autoscaler for automatic scaling
+# ==============================================================================
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: devops-taskboard-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: devops-taskboard
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

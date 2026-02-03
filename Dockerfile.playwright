@@ -1,0 +1,37 @@
+# ==============================================================================
+# Dockerfile.playwright - Playwright E2E Testing Container
+# Uses official Microsoft Playwright image with all 3 browsers pre-installed
+# ==============================================================================
+
+FROM mcr.microsoft.com/playwright:v1.40.0-jammy
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy application source code
+COPY index.js ./
+COPY utils/ ./utils/
+COPY models/ ./models/
+COPY public/ ./public/
+
+# Copy test files
+COPY e2e/ ./e2e/
+COPY playwright.config.ts ./
+COPY generate-coverage.js ./
+
+# Set environment variables
+ENV NODE_ENV=test
+ENV CI=true
+ENV PORT=3000
+
+# Expose port for the application
+EXPOSE 3000
+
+# Default command runs Playwright tests
+# The webServer config in playwright.config.ts will start the app automatically
+CMD ["npx", "playwright", "test", "--reporter=list"]

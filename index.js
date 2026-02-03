@@ -22,7 +22,16 @@ app.delete("/tasks/:id", deletedTask);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-console.log("Attempting to listen on port " + PORT);
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+const shouldListenOnPort =
+  require.main === module || process.env.FORCE_MAIN === "1";
+let server;
+if (shouldListenOnPort) {
+  console.log("Attempting to listen on port " + PORT);
+  server = app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+} else {
+  server = app.listen(0); // Random port for testing
+}
+
+module.exports = { app, server };

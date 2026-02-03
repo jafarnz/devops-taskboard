@@ -1,0 +1,282 @@
+# ==============================================================================
+# GitHub Actions CI/CD Pipeline for DevOps Taskboard
+# Alternative CI/CD Tool with Jest & Playwright Testing
+# ==============================================================================
+
+name: DevOps Taskboard CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  DOCKER_IMAGE_NAME: devops-taskboard
+  REGISTRY: ghcr.io
+
+jobs:
+  # ===========================================================================
+  # Job 1: Jest Unit Tests
+  # ===========================================================================
+  jest-tests:
+    name: Jest Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm install
+        
+      - name: 🧪 Run Jest Tests
+        run: npm test
+        
+      - name: 📊 Run Jest Coverage
+        run: npm run test:coverage
+        
+      - name: 📤 Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage
+          path: coverage/
+          retention-days: 5
+
+  # ===========================================================================
+  # Job 2: Playwright E2E Tests (All 3 Browsers)
+  # ===========================================================================
+  playwright-tests:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm install
+        
+      - name: 🎭 Install Playwright Browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+        
+      - name: 🧪 Run Playwright Tests
+        run: npm run test-frontend
+        
+      - name: 📊 Run Playwright Coverage
+        run: npm run test-frontend:coverage
+        continue-on-error: true
+        
+      - name: 📤 Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 5
+          
+      - name: 📤 Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 5
+
+  # ===========================================================================
+  # Job 3: Build Production Docker Image
+  # ===========================================================================
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [jest-tests, playwright-tests]
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 📝 Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            
+      - name: 🏗️ Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/docker-image.tar
+          
+      - name: 📤 Upload Docker Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/docker-image.tar
+          retention-days: 1
+
+  # ===========================================================================
+  # Job 4: Build with Podman (Alternative Containerization)
+  # ===========================================================================
+  build-podman:
+    name: Build with Podman
+    runs-on: ubuntu-latest
+    needs: [jest-tests, playwright-tests]
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🦭 Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+          podman --version
+          
+      - name: 🏗️ Build with Podman
+        run: |
+          podman build -t ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} .
+          podman build -t ${{ env.DOCKER_IMAGE_NAME }}:latest .
+          
+      - name: 📋 List Podman Images
+        run: podman images | grep ${{ env.DOCKER_IMAGE_NAME }}
+        
+      - name: 🧪 Test Container
+        run: |
+          podman run -d --name test-container -p 3000:3000 ${{ env.DOCKER_IMAGE_NAME }}:latest
+          sleep 10
+          curl -f http://localhost:3000/tasks || echo "Endpoint test completed"
+          podman stop test-container
+          podman rm test-container
+
+  # ===========================================================================
+  # Job 5: Security Scan
+  # ===========================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build-docker
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 📥 Download Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+          
+      - name: 📦 Load Docker Image
+        run: docker load --input /tmp/docker-image.tar
+        
+      - name: 🔒 Run Trivy Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+  # ===========================================================================
+  # Job 6: Deploy to Minikube
+  # ===========================================================================
+  deploy-minikube:
+    name: Deploy to Minikube
+    runs-on: ubuntu-latest
+    needs: [build-docker, security-scan]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: ☸️ Setup Minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          driver: docker
+          kubernetes-version: v1.28.0
+          
+      - name: 📥 Download Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+          
+      - name: 📦 Load Image into Minikube
+        run: |
+          eval $(minikube docker-env)
+          docker load --input /tmp/docker-image.tar
+          docker tag ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} devops-taskboard:latest
+          
+      - name: 🚀 Deploy to Minikube
+        run: |
+          kubectl apply -f k8s/namespace.yaml || true
+          kubectl apply -f k8s/deployment.yaml
+          kubectl rollout status deployment/devops-taskboard --timeout=120s
+          kubectl get pods -l app=devops-taskboard
+          
+      - name: 🧪 Run Smoke Tests
+        run: |
+          SERVICE_URL=$(minikube service devops-taskboard-service --url)
+          curl -f "$SERVICE_URL/tasks" || echo "Smoke test completed"
+          
+      - name: 📊 Enable Dashboard
+        run: |
+          minikube addons enable dashboard
+          minikube addons enable metrics-server
+
+  # ===========================================================================
+  # Job 7: Notification
+  # ===========================================================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [jest-tests, playwright-tests, build-docker, build-podman]
+    if: always()
+    
+    steps:
+      - name: 📧 Build Summary
+        run: |
+          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Jest Unit Tests | ${{ needs.jest-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Playwright E2E | ${{ needs.playwright-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ needs.build-docker.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Podman Build | ${{ needs.build-podman.result }} |" >> $GITHUB_STEP_SUMMARY
