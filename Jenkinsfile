@@ -92,12 +92,21 @@ pipeline {
                 script {
                     def podmanStatus = sh(script: 'podman machine info 2>/dev/null', returnStatus: true)
                     if (podmanStatus == 0) {
-                        sh """
-                            podman build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
-                        """
+                        def buildStatus = sh(
+                            script: "podman build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .",
+                            returnStatus: true
+                        )
+                        if (buildStatus != 0) {
+                            echo '⚠️ Podman build failed (connection issue). Skipping Podman stages.'
+                            currentBuild.result = 'UNSTABLE'
+                            env.PODMAN_OK = 'false'
+                        } else {
+                            env.PODMAN_OK = 'true'
+                        }
                     } else {
                         echo '⚠️ Podman machine not running. Skipping Podman build.'
                         echo 'Run: podman machine start'
+                        env.PODMAN_OK = 'false'
                     }
                 }
             }
@@ -106,7 +115,7 @@ pipeline {
         stage('Run Podman App') {
             when {
                 expression {
-                    return sh(script: 'podman machine info 2>/dev/null', returnStatus: true) == 0
+                    return env.PODMAN_OK == 'true'
                 }
             }
             steps {
