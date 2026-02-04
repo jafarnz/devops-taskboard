@@ -91,6 +91,10 @@ pipeline {
                 echo '🦭 Building Podman image...'
                 script {
                     def podmanStatus = sh(script: 'podman machine info 2>/dev/null', returnStatus: true)
+                    if (podmanStatus != 0) {
+                        echo 'Podman machine not running. Attempting to start...'
+                        podmanStatus = sh(script: 'podman machine start', returnStatus: true)
+                    }
                     if (podmanStatus == 0) {
                         def buildStatus = sh(
                             script: "podman build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .",
