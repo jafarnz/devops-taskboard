@@ -9,6 +9,16 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'html', 'lcov'],
+  reporters: [
+    'default',
+    [
+      'jest-junit',
+      {
+        outputDirectory: 'test-results',
+        outputName: 'jest-junit.xml',
+      },
+    ],
+  ],
   verbose: true,
   testTimeout: 10000,
   clearMocks: true,

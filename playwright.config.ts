@@ -10,6 +10,7 @@ export default defineConfig({
     ['html', { outputFolder: 'playwright-report' }],
     ['list'],
     ['json', { outputFile: 'test-results/results.json' }],
+    ['junit', { outputFile: 'test-results/playwright-junit.xml' }],
   ],
   timeout: 15000,
   expect: {

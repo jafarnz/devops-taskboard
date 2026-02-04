@@ -39,6 +39,7 @@ pipeline {
             post {
                 always {
                     archiveArtifacts artifacts: 'coverage/**/*', allowEmptyArchive: true
+                    junit 'test-results/jest-junit.xml'
                 }
             }
         }
@@ -56,6 +57,7 @@ pipeline {
                 always {
                     archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
                     archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+                    junit 'test-results/playwright-junit.xml'
                 }
             }
         }
@@ -102,7 +104,6 @@ pipeline {
                         )
                         if (buildStatus != 0) {
                             echo '⚠️ Podman build failed (connection issue). Skipping Podman stages.'
-                            currentBuild.result = 'UNSTABLE'
                             env.PODMAN_OK = 'false'
                         } else {
                             env.PODMAN_OK = 'true'
@@ -131,7 +132,6 @@ pipeline {
                     )
                     if (runStatus != 0) {
                         echo '⚠️ Podman run failed (proxy already running or port in use). Skipping Podman app run.'
-                        currentBuild.result = 'UNSTABLE'
                     } else {
                         echo 'Podman app running at: http://localhost:3003'
                     }

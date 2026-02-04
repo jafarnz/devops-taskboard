@@ -1,5 +1,9 @@
 # DevOps Taskboard - CI/CD Pipeline Documentation
 
+[![GitHub Actions](https://github.com/jafarnz/devops-taskboard/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/jafarnz/devops-taskboard/actions/workflows/ci-cd.yml)
+
+GitHub Actions dashboard: https://github.com/jafarnz/devops-taskboard/actions/workflows/ci-cd.yml
+
 ## Project Overview
 
 This project implements a complete CI/CD pipeline using Jenkins, Docker, and Minikube, with additional features including:
