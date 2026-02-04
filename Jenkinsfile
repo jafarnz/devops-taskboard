@@ -124,11 +124,18 @@ pipeline {
             }
             steps {
                 echo '🚀 Starting app with Podman...'
-                sh '''
-                    podman rm -f devops-taskboard-podman || true
-                    podman run -d --name devops-taskboard-podman -p 3003:3000 devops-taskboard:latest
-                    echo "Podman app running at: http://localhost:3003"
-                '''
+                script {
+                    def runStatus = sh(
+                        script: 'podman run -d --replace --name devops-taskboard-podman -p 3003:3000 devops-taskboard:latest',
+                        returnStatus: true
+                    )
+                    if (runStatus != 0) {
+                        echo '⚠️ Podman run failed (proxy already running or port in use). Skipping Podman app run.'
+                        currentBuild.result = 'UNSTABLE'
+                    } else {
+                        echo 'Podman app running at: http://localhost:3003'
+                    }
+                }
             }
         }
 
