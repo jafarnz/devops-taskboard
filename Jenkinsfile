@@ -104,7 +104,8 @@ pipeline {
             steps {
                 echo '🐳 Building Docker image...'
                 sh """
-                    docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
+                    docker build -t ${DOCKER_IMAGE_LATEST} .
+                    docker tag ${DOCKER_IMAGE_LATEST} ${DOCKER_IMAGE}
                     docker images | grep ${APP_NAME} || true
                 """
             }
