@@ -12,7 +12,7 @@ metadata:
     version: v1
     environment: development
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: devops-taskboard
@@ -27,19 +27,6 @@ spec:
         app: devops-taskboard
         version: v1
     spec:
-      initContainers:
-        - name: init-taskboard
-          image: devops-taskboard:latest
-          imagePullPolicy: IfNotPresent
-          command:
-            [
-              "sh",
-              "-c",
-              "cp /app/utils/taskboard.template.json /data/taskboard.json && chown 1001:1001 /data/taskboard.json",
-            ]
-          volumeMounts:
-            - name: tasks-data
-              mountPath: /data
       containers:
         - name: devops-taskboard
           image: devops-taskboard:latest
@@ -52,8 +39,6 @@ spec:
               value: "production"
             - name: PORT
               value: "3000"
-            - name: TASKS_FILE
-              value: "/app/utils/taskboard.json"
           resources:
             requests:
               memory: "128Mi"
@@ -77,11 +62,4 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
-          volumeMounts:
-            - name: tasks-data
-              mountPath: /app/utils/taskboard.json
-              subPath: taskboard.json
       restartPolicy: Always
-      volumes:
-        - name: tasks-data
-          emptyDir: {}

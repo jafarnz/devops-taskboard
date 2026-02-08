@@ -141,10 +141,14 @@ pipeline {
                     kubectl delete service devops-taskboard-service -n devops-taskboard --ignore-not-found
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
-                    kubectl set image deployment/devops-taskboard devops-taskboard=devops-taskboard:${BUILD_NUMBER} init-taskboard=devops-taskboard:${BUILD_NUMBER} -n devops-taskboard
+                    kubectl set image deployment/devops-taskboard devops-taskboard=devops-taskboard:${BUILD_NUMBER} -n devops-taskboard
                     kubectl rollout status deployment/devops-taskboard -n devops-taskboard --timeout=120s
                     kubectl get pods -n devops-taskboard -l app=devops-taskboard
                     kubectl get services -n devops-taskboard
+                '''
+                sh '''
+                    echo "🧽 Resetting task data inside Minikube pod..."
+                    kubectl exec -n devops-taskboard deploy/devops-taskboard -- sh -c "cp /app/utils/taskboard.template.json /app/utils/taskboard.json"
                 '''
                 sh '''
                     echo "Access: http://127.0.0.1:30080"
