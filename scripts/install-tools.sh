@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # Complete CI/CD Environment Setup Script for macOS
-# Installs: Docker, Minikube, kubectl, Jenkins, Podman
+# Installs: Docker, Minikube, kubectl, Jenkins
 # ==============================================================================
 
 set -e
@@ -90,24 +90,7 @@ else
 fi
 
 # ==============================================================================
-# 5. Install Podman (Alternative Containerization)
-# ==============================================================================
-echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Step 5: Podman (Alternative Containerization)${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-if command -v podman &> /dev/null; then
-    echo -e "${GREEN}✓ Podman is already installed${NC}"
-    podman --version
-else
-    echo -e "${YELLOW}Installing Podman...${NC}"
-    brew install podman
-    echo -e "${YELLOW}Initializing Podman machine...${NC}"
-    podman machine init
-fi
-
-# ==============================================================================
-# 6. Install Additional Tools
+# 5. Install Additional Tools
 # ==============================================================================
 echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}Step 6: Additional Tools${NC}"
@@ -142,7 +125,6 @@ echo "  - Docker:    $(docker --version 2>/dev/null || echo 'Not running')"
 echo "  - Minikube:  $(minikube version --short 2>/dev/null || echo 'N/A')"
 echo "  - kubectl:   $(kubectl version --client --short 2>/dev/null || echo 'N/A')"
 echo "  - Jenkins:   $(brew info jenkins-lts 2>/dev/null | head -1 || echo 'Installed')"
-echo "  - Podman:    $(podman --version 2>/dev/null || echo 'N/A')"
 echo "  - Node.js:   $(node --version 2>/dev/null || echo 'N/A')"
 
 echo -e "\n${YELLOW}Next Steps:${NC}"

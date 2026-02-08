@@ -73,18 +73,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${GREEN}✓ Docker images cleaned${NC}"
 fi
 
-# Stop Podman
-echo -e "\n${YELLOW}Stop Podman machine? (y/n)${NC}"
-read -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${GREEN}Stopping Podman...${NC}"
-    podman machine stop 2>/dev/null || true
-    podman stop taskboard 2>/dev/null || true
-    podman rm taskboard 2>/dev/null || true
-    echo -e "${GREEN}✓ Podman stopped${NC}"
-fi
-
 echo -e "\n${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║     Cleanup Complete!                                      ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"

@@ -1,6 +1,6 @@
 // ==============================================================================
 // Jenkinsfile - Simplified CI/CD Pipeline for DevOps Taskboard
-// Features: Jest + Playwright Testing, Docker + Podman, Minikube, Dashboard, Email
+// Features: Jest + Playwright Testing, Docker, Minikube, Dashboard, Email
 // ==============================================================================
 
 pipeline {
@@ -83,62 +83,6 @@ pipeline {
             }
         }
 
-        stage('Build Podman Image') {
-            when {
-                expression {
-                    return sh(script: 'which podman', returnStatus: true) == 0
-                }
-            }
-            steps {
-                echo '🦭 Building Podman image...'
-                script {
-                    def podmanStatus = sh(script: 'podman machine info 2>/dev/null', returnStatus: true)
-                    if (podmanStatus != 0) {
-                        echo 'Podman machine not running. Attempting to start...'
-                        podmanStatus = sh(script: 'podman machine start', returnStatus: true)
-                    }
-                    if (podmanStatus == 0) {
-                        def buildStatus = sh(
-                            script: "podman build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .",
-                            returnStatus: true
-                        )
-                        if (buildStatus != 0) {
-                            echo '⚠️ Podman build failed (connection issue). Skipping Podman stages.'
-                            env.PODMAN_OK = 'false'
-                        } else {
-                            env.PODMAN_OK = 'true'
-                        }
-                    } else {
-                        echo '⚠️ Podman machine not running. Skipping Podman build.'
-                        echo 'Run: podman machine start'
-                        env.PODMAN_OK = 'false'
-                    }
-                }
-            }
-        }
-
-        stage('Run Podman App') {
-            when {
-                expression {
-                    return env.PODMAN_OK == 'true'
-                }
-            }
-            steps {
-                echo '🚀 Starting app with Podman...'
-                script {
-                    def runStatus = sh(
-                        script: 'podman run -d --replace --name devops-taskboard-podman -p 3003:3000 devops-taskboard:latest',
-                        returnStatus: true
-                    )
-                    if (runStatus != 0) {
-                        echo '⚠️ Podman run failed (proxy already running or port in use). Skipping Podman app run.'
-                    } else {
-                        echo 'Podman app running at: http://localhost:3003'
-                    }
-                }
-            }
-        }
-
         stage('Security Scan') {
             steps {
                 echo '🔒 Running security scan (Trivy if available)...'
@@ -170,15 +114,15 @@ pipeline {
                 '''
                 sh '''
                     kubectl apply -f k8s/namespace.yaml || true
-                    kubectl delete service devops-taskboard-service --ignore-not-found
-                    sed "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" k8s/deployment.yaml | kubectl apply -f -
+                    kubectl delete service devops-taskboard-service -n devops-taskboard --ignore-not-found
+                    kubectl apply -f k8s/deployment.yaml
                     kubectl apply -f k8s/dashboard.yaml || true
-                    kubectl rollout status deployment/devops-taskboard --timeout=120s
-                    kubectl get pods -l app=devops-taskboard
-                    kubectl get services
+                    kubectl rollout status deployment/devops-taskboard -n devops-taskboard --timeout=120s
+                    kubectl get pods -n devops-taskboard -l app=devops-taskboard
+                    kubectl get services -n devops-taskboard
                 '''
                 sh '''
-                    echo "Access (recommended): kubectl port-forward svc/devops-taskboard-service 5030:80"
+                    echo "Access (recommended): kubectl port-forward -n devops-taskboard svc/devops-taskboard-service 5030:80"
                     echo "Then open: http://localhost:5030"
                 '''
             }
@@ -194,7 +138,7 @@ pipeline {
                 echo '💨 Running smoke tests...'
                 sh '''
                     sleep 10
-                    kubectl port-forward svc/devops-taskboard-service 5030:80 >/tmp/pf.log 2>&1 &
+                    kubectl port-forward -n devops-taskboard svc/devops-taskboard-service 5030:80 >/tmp/pf.log 2>&1 &
                     PF_PID=$!
                     for i in $(seq 1 15); do
                         if grep -q "Forwarding" /tmp/pf.log; then

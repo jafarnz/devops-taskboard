@@ -7,7 +7,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: devops-taskboard
-  namespace: default
+  namespace: devops-taskboard
   labels:
     app: devops-taskboard
     version: v1
@@ -30,8 +30,8 @@ spec:
     spec:
       containers:
         - name: devops-taskboard
-          image: devops-taskboard:{{BUILD_NUMBER}}
-          imagePullPolicy: Never  # Use local images in Minikube
+          image: devops-taskboard:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               protocol: TCP
@@ -74,7 +74,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: devops-taskboard-service
-  namespace: default
+  namespace: devops-taskboard
   labels:
     app: devops-taskboard
 spec:
@@ -96,7 +96,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: devops-taskboard-ingress
-  namespace: default
+  namespace: devops-taskboard
   labels:
     app: devops-taskboard
   annotations:
@@ -124,7 +124,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: devops-taskboard-config
-  namespace: default
+  namespace: devops-taskboard
   labels:
     app: devops-taskboard
 data:
@@ -140,7 +140,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: devops-taskboard-hpa
-  namespace: default
+  namespace: devops-taskboard
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

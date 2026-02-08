@@ -11,7 +11,6 @@ This project implements a complete CI/CD pipeline using Jenkins, Docker, and Min
 1. ✅ **Visual Tools/Dashboard** - Kubernetes Dashboard & Jenkins Blue Ocean
 2. ✅ **Jenkins Email Notification** - Automated email alerts for build status
 3. ✅ **GitHub Actions** - Alternative CI/CD tool implementation
-4. ✅ **Podman** - Alternative containerization tool
 
 ---
 
@@ -126,19 +125,6 @@ cat ~/.jenkins/secrets/initialAdminPassword
 5. Pipeline
 6. Git
 
-### 4. Podman Setup (Alternative Containerization)
-
-```bash
-# Install Podman
-brew install podman
-
-# Initialize Podman machine
-podman machine init
-podman machine start
-
-# Build with Podman
-./podman/build-and-run.sh
-```
 
 ---
 
@@ -174,7 +160,6 @@ podman machine start
 | Code Quality | Run linting and code quality checks |
 | Unit Tests | Execute Jest unit tests |
 | Build Docker | Build container image using Dockerfile |
-| Build Podman | Alternative build using Podman (if available) |
 | Security Scan | Scan image for vulnerabilities using Trivy |
 | Deploy to Minikube | Apply Kubernetes manifests and deploy |
 | Smoke Tests | Verify deployment is responding |
@@ -231,7 +216,6 @@ Located at: `.github/workflows/ci-cd.yml`
 This workflow provides:
 - Automated builds on push/PR
 - Parallel job execution
-- Docker and Podman builds
 - Minikube deployment
 - Security scanning
 
@@ -240,25 +224,6 @@ This workflow provides:
 git push origin main
 ```
 
-### 4. Podman (Alternative Containerization)
-
-Podman is a daemonless container engine that's Docker-compatible.
-
-```bash
-# Build with Podman
-cd podman
-./build-and-run.sh
-
-# Or manually:
-podman build -t devops-taskboard:latest .
-podman run -d -p 3000:3000 devops-taskboard:latest
-```
-
-**Unique Podman Features:**
-- Rootless containers (no daemon)
-- Generate Kubernetes YAML from containers
-- Systemd integration
-- OCI-compliant
 
 ---
 
@@ -276,9 +241,6 @@ devops-taskboard/
 │   ├── deployment.yaml     # Kubernetes Deployment & Service
 │   ├── dashboard.yaml      # Dashboard configuration
 │   └── namespace.yaml      # Namespace & resource quotas
-├── podman/
-│   ├── README.md           # Podman documentation
-│   └── build-and-run.sh    # Podman build script
 ├── dashboard/
 │   ├── README.md           # Dashboard setup guide
 │   └── setup-dashboard.sh  # Dashboard setup script
@@ -358,14 +320,6 @@ brew services stop jenkins-lts
 brew services restart jenkins-lts
 ```
 
-### Podman Commands
-```bash
-podman machine start
-podman build -t devops-taskboard:latest .
-podman run -d -p 3000:3000 devops-taskboard:latest
-podman ps
-podman machine stop
-```
 
 ---
 
@@ -443,7 +397,6 @@ For your project report, capture these screenshots:
 5. **Kubernetes Dashboard** - Cluster overview
 6. **Pod Status** - Running pods view
 7. **GitHub Actions** - Workflow run visualization
-8. **Podman Build** - Terminal output of Podman build
 9. **Application Running** - Browser showing the taskboard
 
 ---
