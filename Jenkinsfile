@@ -141,6 +141,7 @@ pipeline {
                     kubectl delete service devops-taskboard-service -n devops-taskboard --ignore-not-found
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
+                    kubectl set image deployment/devops-taskboard devops-taskboard=devops-taskboard:${BUILD_NUMBER} init-taskboard=devops-taskboard:${BUILD_NUMBER} -n devops-taskboard
                     kubectl rollout status deployment/devops-taskboard -n devops-taskboard --timeout=120s
                     kubectl get pods -n devops-taskboard -l app=devops-taskboard
                     kubectl get services -n devops-taskboard
