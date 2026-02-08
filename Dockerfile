@@ -103,6 +103,7 @@ COPY --from=prod-dependencies /app/node_modules ./node_modules
 # Copy application source code
 COPY --chown=nodeuser:nodejs package*.json ./
 COPY --chown=nodeuser:nodejs index.js ./
+COPY --chown=nodeuser:nodejs logger.js ./
 COPY --chown=nodeuser:nodejs utils/ ./utils/
 COPY --chown=nodeuser:nodejs models/ ./models/
 COPY --chown=nodeuser:nodejs public/ ./public/
