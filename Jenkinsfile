@@ -21,6 +21,30 @@ pipeline {
     }
 
     stages {
+        stage('Ensure Docker Desktop') {
+            steps {
+                echo '🐳 Ensuring Docker is running...'
+                sh '''
+                    if ! docker info >/dev/null 2>&1; then
+                        echo "Docker not running. Starting Docker Desktop..."
+                        open -a Docker || true
+                        for i in $(seq 1 30); do
+                            if docker info >/dev/null 2>&1; then
+                                echo "Docker is ready"
+                                break
+                            fi
+                            sleep 2
+                        done
+                    fi
+
+                    if ! docker info >/dev/null 2>&1; then
+                        echo "Docker failed to start in time"
+                        exit 1
+                    fi
+                '''
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 echo '📦 Installing dependencies...'
