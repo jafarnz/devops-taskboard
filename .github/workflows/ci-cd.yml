@@ -179,68 +179,6 @@ jobs:
         continue-on-error: true
 
   # ===========================================================================
-  # Job 6: Deploy to Minikube
-  # ===========================================================================
-  deploy-minikube:
-    name: Deploy to Minikube
-    runs-on: ubuntu-latest
-    needs: [build-docker, security-scan]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    
-    steps:
-      - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
-        
-      - name: ☸️ Setup Minikube
-        uses: medyagh/setup-minikube@master
-        with:
-          driver: docker
-          kubernetes-version: v1.28.0
-          
-      - name: 📥 Download Docker Image
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp
-          
-      - name: 📦 Load Image into Minikube
-        run: |
-          eval $(minikube docker-env)
-          docker load --input /tmp/docker-image.tar
-          IMAGE_REF="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}"
-          FULL_SHA="${GITHUB_SHA}"
-          SHORT_SHA="${GITHUB_SHA::7}"
-          if docker image inspect "${IMAGE_REF}:${FULL_SHA}" >/dev/null 2>&1; then
-            docker tag "${IMAGE_REF}:${FULL_SHA}" devops-taskboard:latest
-          elif docker image inspect "${IMAGE_REF}:${SHORT_SHA}" >/dev/null 2>&1; then
-            docker tag "${IMAGE_REF}:${SHORT_SHA}" devops-taskboard:latest
-          elif docker image inspect "${IMAGE_REF}:main" >/dev/null 2>&1; then
-            docker tag "${IMAGE_REF}:main" devops-taskboard:latest
-          elif docker image inspect "${IMAGE_REF}:latest" >/dev/null 2>&1; then
-            docker tag "${IMAGE_REF}:latest" devops-taskboard:latest
-          else
-            echo "No expected tag found after load:" && docker images | head -n 20
-            exit 1
-          fi
-          
-      - name: 🚀 Deploy to Minikube
-        run: |
-          kubectl apply -f k8s/namespace.yaml || true
-          kubectl apply -f k8s/deployment.yaml
-          kubectl rollout status deployment/devops-taskboard -n devops-taskboard --timeout=120s
-          kubectl get pods -n devops-taskboard -l app=devops-taskboard
-          
-      - name: 🧪 Run Smoke Tests
-        run: |
-          SERVICE_URL=$(minikube service devops-taskboard-service --url -n devops-taskboard)
-          curl -f "$SERVICE_URL/tasks" || echo "Smoke test completed"
-          
-      - name: 📊 Enable Dashboard
-        run: |
-          minikube addons enable dashboard
-          minikube addons enable metrics-server
-
-  # ===========================================================================
   # Job 6: Notification
   # ===========================================================================
   notify:
