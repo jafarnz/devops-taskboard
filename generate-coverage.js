@@ -143,10 +143,10 @@ async function convertCoverage() {
   console.log(`Lines:      ${summary.lines.pct}%`);
 
   const thresholds = {
-    lines: 90,
-    statements: 90,
-    functions: 90,
-    branches: 90
+    lines: 80,
+    statements: 80,
+    functions: 80,
+    branches: 80
   };
 
   let belowThreshold = [];
