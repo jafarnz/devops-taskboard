@@ -93,6 +93,13 @@ pipeline {
             }
         }
 
+        stage('Reset Task Data (Pre-Build)') {
+            steps {
+                echo '🧹 Ensuring clean task data before Docker build...'
+                sh 'cp utils/taskboard.template.json utils/taskboard.json'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Building Docker image...'
