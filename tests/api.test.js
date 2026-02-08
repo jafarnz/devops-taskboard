@@ -3,12 +3,16 @@
 const request = require("supertest");
 const fs = require("fs").promises;
 
-jest.mock("fs", () => ({
-  promises: {
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
-  },
-}));
+jest.mock("fs", () => {
+  const actualFs = jest.requireActual("fs");
+  return {
+    ...actualFs,
+    promises: {
+      readFile: jest.fn(),
+      writeFile: jest.fn(),
+    },
+  };
+});
 
 const { app, server } = require("../index");
 

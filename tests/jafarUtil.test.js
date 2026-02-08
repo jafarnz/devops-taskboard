@@ -4,12 +4,16 @@ const { addTask } = require("../utils/jafarUtil");
 const fs = require("fs").promises;
 
 
-jest.mock("fs", () => ({
-  promises: {
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
-  },
-}));
+jest.mock("fs", () => {
+  const actualFs = jest.requireActual("fs");
+  return {
+    ...actualFs,
+    promises: {
+      readFile: jest.fn(),
+      writeFile: jest.fn(),
+    },
+  };
+});
 
 
 jest.mock("../models/Task", () => {
