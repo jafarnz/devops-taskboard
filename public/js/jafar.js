@@ -1,5 +1,5 @@
 function initCreateTaskModule() {
-  var API_URL = "/tasks";
+  var API_URL = "/tasks"; //test
   var modal = document.getElementById("createTaskModal");
   var openBtn = document.getElementById("createTaskBtn");
   var closeBtn = document.getElementById("closeCreateModal");
