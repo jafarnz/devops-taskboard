@@ -1,0 +1,65 @@
+# ==============================================================================
+# Kubernetes Deployment Configuration for DevOps Taskboard (Minikube)
+# ==============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-taskboard
+  namespace: devops-taskboard
+  labels:
+    app: devops-taskboard
+    version: v1
+    environment: development
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devops-taskboard
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: devops-taskboard
+        version: v1
+    spec:
+      containers:
+        - name: devops-taskboard
+          image: devops-taskboard:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /tasks
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /tasks
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      restartPolicy: Always

@@ -216,6 +216,6 @@ jobs:
       - name: 🚀 Deploy to AKS
         run: |
           kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/aks.yaml
           kubectl set image deployment/devops-taskboard devops-taskboard=${{ secrets.ACR_NAME }}.azurecr.io/devops-taskboard:${GITHUB_SHA} -n devops-taskboard
           kubectl rollout status deployment/devops-taskboard -n devops-taskboard --timeout=120s

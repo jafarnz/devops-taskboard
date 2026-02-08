@@ -91,7 +91,7 @@ pipeline {
             }
             steps {
                 echo '☸️ Deploying to Minikube...'
-                sh 'minikube start --driver=docker || true'
+                sh 'minikube start --driver=docker --ports=127.0.0.1:30080:30080 || true'
                 sh '''
                     minikube image load devops-taskboard:${BUILD_NUMBER} || (
                         eval $(minikube docker-env)
@@ -101,15 +101,14 @@ pipeline {
                 sh '''
                     kubectl apply -f k8s/namespace.yaml || true
                     kubectl delete service devops-taskboard-service -n devops-taskboard --ignore-not-found
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/dashboard.yaml || true
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
                     kubectl rollout status deployment/devops-taskboard -n devops-taskboard --timeout=120s
                     kubectl get pods -n devops-taskboard -l app=devops-taskboard
                     kubectl get services -n devops-taskboard
                 '''
                 sh '''
-                    echo "Access (recommended): kubectl port-forward -n devops-taskboard svc/devops-taskboard-service 5030:80"
-                    echo "Then open: http://localhost:5030"
+                    echo "Access: http://127.0.0.1:30080"
                 '''
             }
         }
@@ -124,22 +123,13 @@ pipeline {
                 echo '💨 Running smoke tests...'
                 sh '''
                     sleep 10
-                    kubectl port-forward -n devops-taskboard svc/devops-taskboard-service 5030:80 >/tmp/pf.log 2>&1 &
-                    PF_PID=$!
-                    for i in $(seq 1 15); do
-                        if grep -q "Forwarding" /tmp/pf.log; then
-                            break
-                        fi
-                        sleep 1
-                    done
                     for i in $(seq 1 10); do
-                        if curl -fs "http://localhost:5030/tasks"; then
+                        if curl -fs "http://127.0.0.1:30080/tasks"; then
                             echo "Smoke test passed"
                             break
                         fi
                         sleep 2
                     done
-                    kill $PF_PID || true
                 '''
             }
         }

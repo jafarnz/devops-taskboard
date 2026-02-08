@@ -1,6 +1,5 @@
 # ==============================================================================
-# Kubernetes Deployment Configuration for DevOps Taskboard
-# This file defines the deployment, service, and ingress for Minikube
+# Kubernetes Deployment Configuration for DevOps Taskboard (AKS)
 # ==============================================================================
 
 apiVersion: apps/v1
@@ -11,7 +10,7 @@ metadata:
   labels:
     app: devops-taskboard
     version: v1
-    environment: development
+    environment: production
 spec:
   replicas: 2
   selector:
@@ -66,10 +65,6 @@ spec:
       restartPolicy: Always
 
 ---
-# ==============================================================================
-# Service Configuration - Exposes the deployment internally
-# ==============================================================================
-
 apiVersion: v1
 kind: Service
 metadata:
@@ -78,7 +73,7 @@ metadata:
   labels:
     app: devops-taskboard
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: devops-taskboard
   ports:
@@ -88,38 +83,6 @@ spec:
       targetPort: 3000
 
 ---
-# ==============================================================================
-# Ingress Configuration - External access through Minikube
-# ==============================================================================
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: devops-taskboard-ingress
-  namespace: devops-taskboard
-  labels:
-    app: devops-taskboard
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: taskboard.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: devops-taskboard-service
-                port:
-                  number: 80
-
----
-# ==============================================================================
-# ConfigMap for application configuration
-# ==============================================================================
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -132,10 +95,6 @@ data:
   LOG_LEVEL: "info"
 
 ---
-# ==============================================================================
-# Horizontal Pod Autoscaler for automatic scaling
-# ==============================================================================
-
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
