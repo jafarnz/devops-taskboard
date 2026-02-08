@@ -72,6 +72,8 @@ pipeline {
             steps {
                 echo '🎭 Running Playwright tests (Chromium, Firefox, WebKit)...'
                 sh '''
+                    # Ensure nothing is already bound to the Playwright webServer port
+                    lsof -ti tcp:3000 | xargs -r kill -9 || true
                     npx playwright install --with-deps chromium firefox webkit
                     npm run test-frontend || true
                     npm run test-frontend:coverage || true
@@ -81,7 +83,7 @@ pipeline {
                 always {
                     archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
                     archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
-                    junit 'test-results/playwright-junit.xml'
+                    junit testResults: 'test-results/playwright-junit.xml', allowEmptyResults: true
                 }
             }
         }
