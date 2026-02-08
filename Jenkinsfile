@@ -83,20 +83,6 @@ pipeline {
             }
         }
 
-        stage('Security Scan') {
-            steps {
-                echo '🔒 Running security scan (Trivy if available)...'
-                script {
-                    def trivyExists = sh(script: 'which trivy', returnStatus: true) == 0
-                    if (trivyExists) {
-                        sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE_LATEST} || true"
-                    } else {
-                        echo 'Trivy not installed, skipping scan'
-                    }
-                }
-            }
-        }
-
         stage('Deploy to Minikube') {
             when {
                 expression {

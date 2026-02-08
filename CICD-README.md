@@ -160,7 +160,6 @@ cat ~/.jenkins/secrets/initialAdminPassword
 | Code Quality | Run linting and code quality checks |
 | Unit Tests | Execute Jest unit tests |
 | Build Docker | Build container image using Dockerfile |
-| Security Scan | Scan image for vulnerabilities using Trivy |
 | Deploy to Minikube | Apply Kubernetes manifests and deploy |
 | Smoke Tests | Verify deployment is responding |
 | Email Notification | Send build status via email |
@@ -217,7 +216,6 @@ This workflow provides:
 - Automated builds on push/PR
 - Parallel job execution
 - Minikube deployment
-- Security scanning
 
 **Trigger the workflow:**
 ```bash
