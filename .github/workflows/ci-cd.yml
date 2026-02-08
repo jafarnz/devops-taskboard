@@ -194,14 +194,16 @@ jobs:
 
       - name: 🔍 Debug ACR Access
         run: |
+          ACR_NAME_LOWER=$(echo "${{ secrets.ACR_NAME }}" | tr '[:upper:]' '[:lower:]')
           az account show
-          az acr show --name ${{ secrets.ACR_NAME }}
+          az acr show --name "$ACR_NAME_LOWER"
 
       - name: 🐳 Build and Push to ACR
         run: |
-          ACR="${{ secrets.ACR_NAME }}.azurecr.io"
+          ACR_NAME_LOWER=$(echo "${{ secrets.ACR_NAME }}" | tr '[:upper:]' '[:lower:]')
+          ACR="$ACR_NAME_LOWER.azurecr.io"
           IMAGE="$ACR/devops-taskboard:${GITHUB_SHA}"
-          az acr login --name ${{ secrets.ACR_NAME }}
+          az acr login --name "$ACR_NAME_LOWER"
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
 
