@@ -15,7 +15,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(statusMonitor());
+app.use(
+  statusMonitor({
+    path: "/status",
+    healthChecks: [],
+  })
+);
 
 app.get("/tasks", getAllTasks);
 app.get("/tasks/:id", getTaskById);

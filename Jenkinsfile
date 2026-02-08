@@ -86,6 +86,13 @@ pipeline {
             }
         }
 
+        stage('Reset Task Data') {
+            steps {
+                echo '🧹 Resetting task data after tests...'
+                sh 'cp utils/taskboard.template.json utils/taskboard.json'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Building Docker image...'

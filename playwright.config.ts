@@ -47,6 +47,10 @@ export default defineConfig({
     command: 'node index.js',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    env: {
+      TASKS_FILE: 'test-results/taskboard.test.json',
+      TEMPLATE_FILE: 'utils/taskboard.template.json',
+    },
     timeout: 60 * 1000,
   },
 });

@@ -1,8 +1,9 @@
 const Task = require("../models/Task");
 const fs = require("fs").promises;
 const path = require("path");
-const TASKS_FILE = path.join("utils", "taskboard.json");
-const TEMPLATE_FILE = path.join("utils", "taskboard.template.json");
+const TASKS_FILE = process.env.TASKS_FILE || path.join("utils", "taskboard.json");
+const TEMPLATE_FILE =
+  process.env.TEMPLATE_FILE || path.join("utils", "taskboard.template.json");
 
 async function addTask(req, res) {
   try {

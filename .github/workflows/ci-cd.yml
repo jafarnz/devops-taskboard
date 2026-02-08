@@ -219,3 +219,17 @@ jobs:
           kubectl apply -f k8s/aks.yaml
           kubectl set image deployment/devops-taskboard devops-taskboard=${{ secrets.ACR_NAME }}.azurecr.io/devops-taskboard:${GITHUB_SHA} -n devops-taskboard
           kubectl rollout status deployment/devops-taskboard -n devops-taskboard --timeout=120s
+
+      - name: 🌐 Output AKS Service URL
+        run: |
+          for i in $(seq 1 30); do
+            EXTERNAL_IP=$(kubectl get svc devops-taskboard-service -n devops-taskboard -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [ -n "$EXTERNAL_IP" ]; then
+              echo "AKS URL: http://$EXTERNAL_IP"
+              echo "AKS URL: http://$EXTERNAL_IP" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+            echo "Waiting for external IP..."
+            sleep 10
+          done
+          echo "External IP not ready yet. Check: kubectl get svc -n devops-taskboard" >> $GITHUB_STEP_SUMMARY
