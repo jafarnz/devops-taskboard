@@ -115,7 +115,8 @@ pipeline {
             steps {
                 echo '🚀 Starting app with Docker...'
                 sh '''
-                    docker rm -f devops-taskboard-local || true
+                    # Remove any existing container with the same name
+                    docker ps -aq --filter "name=^/devops-taskboard-local$" | xargs -r docker rm -f
                     docker run -d --name devops-taskboard-local -p 3002:3000 devops-taskboard:latest
                     echo "Docker app running at: http://localhost:3002"
                 '''
