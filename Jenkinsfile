@@ -152,7 +152,16 @@ pipeline {
                 '''
                 sh '''
                     echo "🧽 Resetting task data inside Minikube pod..."
-                    kubectl exec -n devops-taskboard deploy/devops-taskboard -- sh -c "cp /app/utils/taskboard.template.json /app/utils/taskboard.json"
+                    kubectl exec -n devops-taskboard deploy/devops-taskboard -- sh -c '
+                        if [ -f /usr/src/app/utils/taskboard.template.json ]; then
+                          cp /usr/src/app/utils/taskboard.template.json /usr/src/app/utils/taskboard.json
+                        elif [ -f /app/utils/taskboard.template.json ]; then
+                          cp /app/utils/taskboard.template.json /app/utils/taskboard.json
+                        else
+                          echo "Template file not found in /usr/src/app or /app"
+                          exit 1
+                        fi
+                    '
                 '''
                 sh '''
                     echo "Access: http://127.0.0.1:30080"
